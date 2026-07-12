@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cozy Farm Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ef; --surface: #fff; --surface2: #f0ede8;
+    --border: #e0dbd3; --border2: #ccc6bc;
+    --text: #1a1815; --text2: #6b6560; --text3: #a09a93;
+    --accent: #4a6fa5; --accent-h: #3a5a8a; --accent-light: #e8f0fa;
+    --active-bg: #e8f4e8; --active-border: #6ab06a; --active-text: #1e5c1e;
+    --glitter: #e8a020; --glitter-bg: #fff8e6; --glitter-border: #e8a020; --glitter-text: #7a4f00;
+    --danger-text: #7a2018; --danger-border: #d97060; --danger-bg: #faeae8;
+    --sorted-bg: #f0f5ff;
+    --radius: 8px; --radius-sm: 5px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #252320; --surface2: #2e2b27;
+      --border: #3a3630; --border2: #4a4640;
+      --text: #f0ede8; --text2: #a09a93; --text3: #6b6560;
+      --accent: #5a80b5; --accent-h: #6a90c5; --accent-light: #101828;
+      --active-bg: #132013; --active-border: #3a703a; --active-text: #80c880;
+      --glitter: #c08010; --glitter-bg: #2e2310; --glitter-border: #c08010; --glitter-text: #f0c060;
+      --danger-text: #e08070; --danger-border: #904030; --danger-bg: #201210;
+      --sorted-bg: #101828;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+  /* ── HEADER ── */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 11px 20px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+  header h1 { font-size: 15px; font-weight: 600; flex: 1; min-width: 120px; }
+  .header-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+  .hamburger-btn { display: none; width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); font-size: 18px; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Mobile drawer */
+  #mob-menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 499; }
+  #mob-menu-overlay.open { display: block; }
+  #mob-menu { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 220px; background: var(--surface); z-index: 500; flex-direction: column; padding: 16px; box-shadow: -4px 0 20px rgba(0,0,0,0.2); gap: 6px; }
+  #mob-menu.open { display: flex; }
+  #mob-menu .mob-menu-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text2); }
+  #mob-menu .btn { width: 100%; text-align: left; padding: 10px 12px; font-size: 14px; }
+
+  .btn { font-size: 12px; font-weight: 500; padding: 6px 11px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); color: var(--text); cursor: pointer; white-space: nowrap; transition: background 0.12s; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+  .btn:hover { background: var(--surface2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+  .btn.danger { color: var(--danger-text); border-color: var(--danger-border); }
+  .btn.danger:hover { background: var(--danger-bg); }
+  .btn.sm { font-size: 11px; padding: 4px 8px; }
+
+  /* ── MAIN ── */
+  main { padding: 14px 20px 80px; max-width: 1200px; margin: 0 auto; }
+
+  /* ── ACTIVE BAR ── */
+  .active-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 15px; margin-bottom: 14px; }
+  .active-bar-head { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .active-bar-title { font-size: 13px; font-weight: 600; flex: 1; }
+  .active-pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; background: var(--active-bg); border: 1px solid var(--active-border); color: var(--active-text); }
+  .chips-row { display: flex; gap: 7px; flex-wrap: wrap; }
+  .creature-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--surface2); font-size: 12px; cursor: pointer; user-select: none; transition: all 0.12s; }
+  .creature-chip:hover { border-color: var(--border2); }
+  .creature-chip.active { border-color: var(--active-border); background: var(--active-bg); color: var(--active-text); font-weight: 600; }
+  .creature-chip.disabled { opacity: 0.38; cursor: not-allowed; }
+  .chip-food { font-size: 10px; opacity: 0.65; }
+  .no-creatures-msg { font-size: 13px; color: var(--text3); font-style: italic; }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .search-wrap { position: relative; }
+  .search-input { font-size: 13px; padding: 5px 10px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); outline: none; width: 200px; }
+  .search-input:focus { border-color: var(--accent); }
+  .toolbar-count { font-size: 12px; color: var(--text3); }
+  .toolbar-spacer { flex: 1; }
+
+  /* ── PLAYER TABLE ── */
+  .player-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+  /* Column headers = creature lines */
+  .col-headers { display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: var(--surface2); }
+  .col-player-header { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); min-width: 200px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+  .col-tatari-header { flex: 1; min-width: 100px; padding: 9px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text2); cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--border); transition: background 0.1s; text-align: center; }
+  .col-tatari-header:hover { background: var(--bg); }
+  .col-tatari-header.sorted { background: var(--sorted-bg); color: var(--accent); border-top: 2px solid var(--accent); margin-top: -2px; }
+  .col-sort-arrow { font-size: 12px; opacity: 0.7; }
+  .col-food-label { font-size: 10px; font-weight: 400; color: var(--text3); }
+
+  /* Player rows */
+  .player-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+  .player-row:last-child { border-bottom: none; }
+  .player-row:hover { background: var(--surface2); }
+
+  .player-info-cell { min-width: 200px; flex-shrink: 0; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 2px; border-right: 1px solid var(--border); }
+  .player-row-name { font-size: 13px; font-weight: 600; }
+  .player-row-uid { font-size: 10px; color: var(--text3); font-family: monospace; }
+  .player-row-actions { display: flex; gap: 5px; margin-top: 5px; }
+
+  .tatari-cell { flex: 1; min-width: 100px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-left: 1px solid var(--border); }
+  .tatari-cell.sorted-col { background: var(--sorted-bg); }
+  .tatari-cell.best-cell { position: relative; }
+  .tc-pts-val { font-size: 16px; font-weight: 700; color: var(--text); }
+  .tc-pts-val.glitter { color: var(--glitter); }
+  .tc-pts-val.empty { font-size: 12px; color: var(--text3); font-weight: 400; font-style: italic; }
+  .tc-meta { display: flex; align-items: center; gap: 4px; }
+  .tc-tier-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 6px; }
+  .t1 { background: #e8f0fa; color: #1a3a6a; border: 1px solid #6090d0; }
+  .t2 { background: #f0e8fa; color: #3a1a6a; border: 1px solid #9060c0; }
+  .t3 { background: #fae8f0; color: #6a1a3a; border: 1px solid #d06090; }
+  .t4 { background: #faf0e8; color: #6a3a1a; border: 1px solid #c08030; }
+  @media (prefers-color-scheme: dark) {
+    .t1 { background: #101828; border-color: #304870; color: #80a8e0; }
+    .t2 { background: #180e28; border-color: #604890; color: #b080e0; }
+    .t3 { background: #280e18; border-color: #904868; color: #e080a8; }
+    .t4 { background: #28180e; border-color: #905030; color: #e0a880; }
+  }
+  .tc-glitter-star { color: var(--glitter); font-size: 12px; }
+  .rank-badge { font-size: 10px; font-weight: 700; color: var(--accent); background: var(--accent-light); border-radius: 8px; padding: 1px 6px; }
+  .rank-badge.g { color: var(--glitter-text); background: var(--glitter-bg); }
+
+  .no-data-row { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
+
+  /* ── MODALS ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 540px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+  .modal-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px 11px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .modal-header h2 { font-size: 15px; font-weight: 600; flex: 1; }
+  .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text2); line-height: 1; }
+  .modal-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 13px; }
+  .modal-footer { padding: 11px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .field input, .field select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); outline: none; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+
+  /* Per-tatari point entry in player modal */
+  .pts-grid { display: flex; flex-direction: column; gap: 7px; }
+  .pts-row { display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .pts-row-label { flex: 1; min-width: 0; }
+  .pts-row-label .creature-name { font-size: 13px; font-weight: 600; }
+  .pts-row-label .food-name { font-size: 11px; color: var(--text3); }
+  .pts-tier-row { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .pts-tier-row select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; width: 58px; }
+  .pts-tier-row select:focus { border-color: var(--accent); }
+  .pts-tier-row input[type=number] { width: 70px; font-size: 13px; font-weight: 700; text-align: right; padding: 3px 7px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; }
+  .pts-tier-row input[type=number]:focus { border-color: var(--accent); }
+  .glitter-chk { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--glitter-text); cursor: pointer; }
+  .glitter-chk input { width: 14px; height: 14px; accent-color: var(--glitter); cursor: pointer; }
+
+  /* Creature lines modal */
+  .cl-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .cl-row input { flex: 1; font-size: 12px; padding: 4px 7px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; }
+  .cl-row input:focus { border-color: var(--accent); }
+  .del-btn { background: none; border: none; font-size: 18px; color: var(--text3); cursor: pointer; padding: 0 2px; }
+  .del-btn:hover { color: var(--danger-text); }
+
+  /* conflict / confirm */
+  .warn-box { background: var(--glitter-bg); border: 1px solid var(--glitter-border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: var(--glitter-text); line-height: 1.6; }
+  .confirm-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; max-width: 340px; width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+  .confirm-box h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .confirm-box p { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 14px; }
+  .confirm-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: var(--surface); font-size: 13px; padding: 8px 16px; border-radius: 20px; pointer-events: none; transition: transform 0.25s; z-index: 500; white-space: nowrap; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #import-input { display: none; }
+
+  /* Remove rank badge entirely */
+  .rank-badge { display: none; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    header { padding: 10px 14px; flex-wrap: nowrap; }
+    header h1 { font-size: 13px; }
+    .header-btns { display: none; }
+    .hamburger-btn { display: flex; }
+
+    main { padding: 10px 12px 80px; }
+
+    /* Stack active bar chips tighter */
+    .active-bar { padding: 9px 12px; }
+    .creature-chip { font-size: 11px; padding: 4px 9px; }
+
+    /* Toolbar */
+    .toolbar { gap: 8px; }
+    .search-input { width: 100%; }
+    .toolbar-count { font-size: 11px; }
+
+    /* Hide desktop table, show mobile cards */
+    .player-table-wrap { background: none; border: none; border-radius: 0; overflow: visible; }
+    .col-headers { display: none; }
+
+    .player-row {
+      flex-direction: column; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 8px; overflow: hidden;
+    }
+    .player-info-cell {
+      min-width: unset; border-right: none;
+      border-bottom: 1px solid var(--border);
+      flex-direction: row; align-items: center;
+      padding: 9px 12px; gap: 10px;
+    }
+    .player-info-cell > div:first-child { flex: 1; min-width: 0; }
+    .player-row-name { font-size: 13px; }
+    .player-row-actions { margin-top: 0; }
+
+    /* Tatari cells become a horizontal scroll row */
+    .tatari-cells-mobile { display: flex; overflow-x: auto; padding: 8px 10px; gap: 8px; }
+    .tatari-cell {
+      min-width: 80px; flex-shrink: 0;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--surface2); padding: 7px 8px;
+      flex-direction: column; align-items: center; justify-content: center;
+    }
+    .tatari-cell.sorted-col { background: var(--sorted-bg); border-color: var(--accent); }
+    .tatari-cell-label { font-size: 10px; color: var(--text3); text-align: center; margin-bottom: 3px; }
+
+    /* Modals full screen on mobile */
+    .overlay { padding: 0; align-items: flex-end; }
+    .modal { max-height: 90vh; border-radius: var(--radius) var(--radius) 0 0; max-width: 100%; }
+    .confirm-box { margin: 0 16px 40px; }
+  }
+
+  @media (min-width: 641px) {
+    .hamburger-btn { display: none; }
+    #mob-menu, #mob-menu-overlay { display: none !important; }
+    .tatari-cells-mobile { display: contents; }
+    .tatari-cell-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 Cozy Farm Tracker</h1>
+  <div class="header-btns">
+    <button class="btn" onclick="openCreatureConfig()">📚 Tatari Lib</button>
+    <button class="btn" onclick="openAddPlayer()">+ Add Player</button>
+    <button class="btn" onclick="document.getElementById('import-input').click()">Import JSON</button>
+    <button class="btn" onclick="exportJSON()">Save JSON</button>
+  </div>
+  <button class="hamburger-btn" onclick="openMobMenu()">☰</button>
+</header>
+
+<div id="mob-menu-overlay" onclick="closeMobMenu()"></div>
+<div id="mob-menu">
+  <div class="mob-menu-header"><span>Menu</span><button class="close-btn" onclick="closeMobMenu()">×</button></div>
+  <button class="btn primary" onclick="openAddPlayer();closeMobMenu()">+ Add Player</button>
+  <button class="btn" onclick="openCreatureConfig();closeMobMenu()">📚 Tatari Lib</button>
+  <button class="btn" onclick="exportJSON();closeMobMenu()">Save JSON</button>
+  <button class="btn" onclick="document.getElementById('import-input').click();closeMobMenu()">Import JSON</button>
+  <button class="btn danger" onclick="confirmClearAll();closeMobMenu()">Clear all</button>
+</div>
+
+<input type="file" id="import-input" accept=".json,application/json" onchange="importJSON(event)" style="display:none">
+
+<!-- ── PLAYER MODAL ── -->
+<div class="overlay" id="player-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="pm-title">Add Player</h2>
+      <button class="close-btn" onclick="closePlayerModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Player Name</label><input type="text" id="pm-name" placeholder="e.g. TatariMaster"></div>
+        <div class="field"><label>UID</label><input type="text" id="pm-uid" placeholder="e.g. 11111111"></div>
+      </div>
+      <div class="field">
+        <label>Tatari points (for active creature lines)</label>
+        <div class="pts-grid" id="pts-grid"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePlayerModal()">Cancel</button>
+      <button class="btn primary" onclick="savePlayer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CREATURE CONFIG MODAL ── -->
+<div class="overlay" id="creature-overlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2>Creature Lines</h2>
+      <button class="close-btn" onclick="closeCreatureConfig()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);line-height:1.5;">Define creature lines and their food type. Activate up to 5 lines as the current round's tatari using the chips on the main screen.</p>
+      <div id="cl-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button class="btn" style="margin-top:4px;" onclick="addCL()">+ Add Line</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeCreatureConfig()">Cancel</button>
+      <button class="btn primary" onclick="saveCreatureConfig()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFLICT MODAL ── -->
+<div class="overlay" id="conflict-overlay">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header"><h2>Import conflicts</h2><button class="close-btn" onclick="closeConflict()">×</button></div>
+    <div class="modal-body"><div class="warn-box" id="conflict-msg"></div></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeConflict()">Cancel</button>
+      <button class="btn primary" onclick="confirmImport()">Update &amp; import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-msg"></p>
+    <div class="confirm-btns">
+      <button class="btn" onclick="closeConfirm()">Cancel</button>
+      <button class="btn danger" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<main id="main"></main>
+
+<script>
+const DEFAULT_CREATURES = [
+  { line:'Frugling',  food:'Dragon'  },
+  { line:'Maskfry',   food:'Phantom' },
+  { line:'Droppit',   food:'Carrot'  },
+  { line:'Pandaroo',  food:'Bamboo'  },
+  { line:'Hootlet',   food:'Clocko'  },
+  { line:'Punchimp',  food:'Banana'  },
+];
+const TIERS = ['T1','T2','T3','T4'];
+const MAX_ACTIVE = 5;
+const LS_KEY = 'cozy-farm-v2';
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+// creatures: [{line, food, active}]
+// players:   [{id, name, uid, tatari: {[line]: {tier, glitter, points}}}]
+let state = { creatures: DEFAULT_CREATURES.map(c=>({...c,active:false})), players:[] };
+let sortLine = null;
+let sortDir  = 'desc';
+let searchVal = '';   // source of truth for search — never read from DOM in render()
+let editingPid = null;
+let pendingImport = null;
+let tempCL = [];
+let _confirmCb = null;
+
+// ── PERSISTENCE ────────────────────────────────────────────────────────────
+function loadState() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+    if (d.creatures) state.creatures = d.creatures;
+    if (d.players)   state.players   = d.players;
+  } catch(e){}
+}
+function saveState() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function activeCreatures() { return state.creatures.filter(c=>c.active); }
+function foodFor(line) { return (state.creatures.find(c=>c.line===line)||{}).food||'?'; }
+function tierClass(t) { return ({T1:'t1',T2:'t2',T3:'t3',T4:'t4'})[t]||'t1'; }
+
+function ptsFor(player, line) {
+  return player.tatari?.[line]?.points ?? null;
+}
+function sortValue(player) {
+  if (sortLine) return ptsFor(player, sortLine) ?? -1;
+  const active = activeCreatures();
+  if (!active.length) return -1;
+  return Math.max(-1, ...active.map(c => ptsFor(player, c.line) ?? -1));
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  const main = document.getElementById('main');
+  const active = activeCreatures();
+
+  const players = state.players
+    .filter(p => !searchVal || p.name.toLowerCase().includes(searchVal) || (p.uid||'').toLowerCase().includes(searchVal))
+    .sort((a,b) => sortDir==='desc' ? sortValue(b)-sortValue(a) : sortValue(a)-sortValue(b));
+
+  // ── Active bar chips ──
+  const chips = state.creatures.map(c => {
+    const canActivate = c.active || active.length < MAX_ACTIVE;
+    return `<div class="creature-chip${c.active?' active':''}${!canActivate?' disabled':''}"
+      onclick="${canActivate?`toggleCreature('${esc(c.line)}')`:''}">
+      ${esc(c.line)}<span class="chip-food">${esc(c.food)}</span>
+    </div>`;
+  }).join('') || `<span class="no-creatures-msg">No creatures configured — click ⚙ Creatures to add some.</span>`;
+
+  // ── Column headers ──
+  const colHeaders = active.map(c => {
+    const isSorted = sortLine === c.line;
+    return `<div class="col-tatari-header${isSorted?' sorted':''}" onclick="setSort('${esc(c.line)}')">
+      <span>${esc(c.line)}</span>
+      <span class="col-food-label">${esc(c.food)}</span>
+      ${isSorted ? `<span class="col-sort-arrow">${sortDir==='desc'?'↓':'↑'}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  // ── Player rows ──
+  let rowsHtml = '';
+  if (!players.length) {
+    rowsHtml = `<div class="no-data-row">${searchVal?'No players match your search.':'No players yet — click "+ Add Player" to get started.'}</div>`;
+  } else {
+    rowsHtml = players.map(p => {
+      const cells = active.map(c => {
+        const isSorted = sortLine === c.line;
+        const entry = p.tatari?.[c.line];
+        const pts = entry?.points ?? null;
+        const hasPts = pts !== null;
+        const isGlitter = entry?.glitter;
+        const tier = entry?.tier;
+
+        return `<div class="tatari-cell${isSorted?' sorted-col':''}">
+          <div class="tatari-cell-label">${esc(c.line)}</div>
+          <div class="tc-pts-val${isGlitter?' glitter':''}${!hasPts?' empty':''}">${hasPts ? pts : '—'}</div>
+          ${hasPts ? `<div class="tc-meta">
+            ${tier ? `<span class="tc-tier-badge ${tierClass(tier)}">${esc(tier)}</span>` : ''}
+            ${isGlitter ? '<span class="tc-glitter-star">✦</span>' : ''}
+          </div>` : ''}
+        </div>`;
+      }).join('');
+
+      return `<div class="player-row">
+        <div class="player-info-cell">
+          <div>
+            <div class="player-row-name">${esc(p.name)}</div>
+            ${p.uid ? `<div class="player-row-uid">UID: ${esc(p.uid)}</div>` : ''}
+          </div>
+          <div class="player-row-actions">
+            <button class="btn sm" onclick="openEditPlayer('${p.id}')">Edit</button>
+            <button class="btn sm danger" onclick="deletePlayer('${p.id}')">Delete</button>
+          </div>
+        </div>
+        <div class="tatari-cells-mobile">${cells}</div>
+      </div>`;
+    }).join('');
+  }
+
+  main.innerHTML = `
+    <div class="active-bar">
+      <div class="active-bar-head">
+        <span class="active-bar-title">Active Tatari This Round</span>
+        <span class="active-pill">${active.length} / ${MAX_ACTIVE}</span>
+      </div>
+      <div class="chips-row">${chips}</div>
+    </div>
+    <div class="toolbar">
+      <input type="text" class="search-input" id="search-input"
+        placeholder="Search player…" value="${esc(searchVal)}" oninput="onSearch(this.value)">
+      <span class="toolbar-count">${players.length} player${players.length!==1?'s':''}</span>
+      ${sortLine ? `<span style="font-size:12px;color:var(--accent);">↕ <strong>${esc(sortLine)}</strong> — <a href="#" onclick="clearSort();return false;" style="color:var(--accent);font-size:12px;">clear</a></span>` : ''}
+      <div class="toolbar-spacer"></div>
+      <button class="btn sm danger" onclick="confirmClearAll()">Clear all</button>
+    </div>
+    <div class="player-table-wrap">
+      ${active.length ? `<div class="col-headers">
+        <div class="col-player-header">Player</div>
+        ${colHeaders}
+      </div>` : ''}
+      ${rowsHtml}
+    </div>`;
+
+  // Restore focus to search if it was active
+  if (document.activeElement?.id !== 'search-input') return;
+  const inp = document.getElementById('search-input');
+  if (inp) inp.focus();
+}
+
+// ── SORT ────────────────────────────────────────────────────────────────────
+function setSort(line) {
+  if (sortLine === line) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortLine = line;
+    sortDir = 'desc';
+  }
+  render();
+}
+function clearSort() { sortLine = null; sortDir = 'desc'; render(); }
+
+// ── CREATURE CHIP TOGGLE ───────────────────────────────────────────────────
+function toggleCreature(line) {
+  const c = state.creatures.find(c=>c.line===line);
+  if (!c) return;
+  const active = activeCreatures();
+  if (!c.active && active.length >= MAX_ACTIVE) return;
+  c.active = !c.active;
+  // If we just deactivated the sorted column, clear sort
+  if (!c.active && sortLine === line) { sortLine = null; }
+  saveState(); render();
+}
+
+// ── PLAYER MODAL ───────────────────────────────────────────────────────────
+function openAddPlayer() {
+  editingPid = null;
+  document.getElementById('pm-title').textContent = 'Add Player';
+  document.getElementById('pm-name').value = '';
+  document.getElementById('pm-uid').value = '';
+  buildPtsGrid({});
+  document.getElementById('player-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('pm-name').focus(), 50);
+}
+
+function openEditPlayer(pid) {
+  const p = state.players.find(p=>p.id===pid);
+  if (!p) return;
+  editingPid = pid;
+  document.getElementById('pm-title').textContent = 'Edit Player';
+  document.getElementById('pm-name').value = p.name;
+  document.getElementById('pm-uid').value = p.uid||'';
+  buildPtsGrid(p.tatari||{});
+  document.getElementById('player-overlay').classList.add('open');
+}
+
+function buildPtsGrid(existing) {
+  const grid = document.getElementById('pts-grid');
+  const active = activeCreatures();
+  if (!active.length) {
+    grid.innerHTML = '<p style="font-size:13px;color:var(--text3);">No active tatari. Activate creature lines on the main screen first.</p>';
+    return;
+  }
+  grid.innerHTML = active.map(c => {
+    const entry = existing[c.line] || {};
+    const tierVal = entry.tier || 'T1';
+    const ptsVal  = entry.points ?? '';
+    const glit    = entry.glitter || false;
+    return `<div class="pts-row">
+      <div class="pts-row-label">
+        <div class="creature-name">${esc(c.line)}</div>
+        <div class="food-name">${esc(c.food)}</div>
+      </div>
+      <div class="pts-tier-row">
+        <select id="pt-tier-${esc(c.line)}">
+          ${TIERS.map(t=>`<option value="${t}" ${t===tierVal?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <input type="number" id="pt-pts-${esc(c.line)}" min="0" value="${ptsVal}" placeholder="pts">
+        <label class="glitter-chk">
+          <input type="checkbox" id="pt-glit-${esc(c.line)}" ${glit?'checked':''}> ✦
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closePlayerModal() {
+  document.getElementById('player-overlay').classList.remove('open');
+  editingPid = null;
+}
+
+function savePlayer() {
+  const name = document.getElementById('pm-name').value.trim();
+  const uid  = document.getElementById('pm-uid').value.trim();
+  if (!name) { showToast('Player name is required'); return; }
+
+  const active = activeCreatures();
+  const tatari = {};
+  active.forEach(c => {
+    const ptsEl  = document.getElementById(`pt-pts-${c.line}`);
+    const tierEl = document.getElementById(`pt-tier-${c.line}`);
+    const glitEl = document.getElementById(`pt-glit-${c.line}`);
+    if (ptsEl && ptsEl.value !== '') {
+      tatari[c.line] = {
+        tier:    tierEl?.value || 'T1',
+        glitter: glitEl?.checked || false,
+        points:  parseInt(ptsEl.value) || 0,
+      };
+    }
+  });
+
+  if (editingPid) {
+    const p = state.players.find(p=>p.id===editingPid);
+    p.name = name; p.uid = uid;
+    // Merge — keep non-active lines, overwrite active ones
+    Object.assign(p.tatari, tatari);
+  } else {
+    state.players.push({ id: genId(), name, uid, tatari });
+  }
+
+  saveState(); render(); closePlayerModal();
+  showToast(editingPid ? 'Player updated' : 'Player added');
+}
+
+function deletePlayer(pid) {
+  const p = state.players.find(p=>p.id===pid);
+  if (!p) return;
+  openConfirm('Delete player?', `Remove "${p.name}" and all their data?`, ()=>{
+    state.players = state.players.filter(p=>p.id!==pid);
+    saveState(); render(); showToast('Player deleted');
+  });
+}
+
+// ── CREATURE CONFIG ────────────────────────────────────────────────────────
+function openCreatureConfig() {
+  tempCL = state.creatures.map(c=>({...c}));
+  renderCL();
+  document.getElementById('creature-overlay').classList.add('open');
+}
+function closeCreatureConfig() { document.getElementById('creature-overlay').classList.remove('open'); }
+
+function renderCL() {
+  document.getElementById('cl-list').innerHTML = tempCL.map((c,i)=>`
+    <div class="cl-row">
+      <input type="text" placeholder="Creature line" value="${esc(c.line)}" oninput="tempCL[${i}].line=this.value">
+      <input type="text" placeholder="Food" value="${esc(c.food)}" oninput="tempCL[${i}].food=this.value">
+      <button class="del-btn" onclick="removeCL(${i})">×</button>
+    </div>`).join('');
+}
+function addCL() { tempCL.push({line:'',food:'',active:false}); renderCL(); }
+function removeCL(i) { tempCL.splice(i,1); renderCL(); }
+
+function saveCreatureConfig() {
+  const valid = tempCL.filter(c=>c.line.trim());
+  if (!valid.length) { showToast('At least one creature line required'); return; }
+  state.creatures = valid.map(c=>({line:c.line.trim(),food:c.food.trim(),active:!!c.active}));
+  if (sortLine && !state.creatures.find(c=>c.line===sortLine)) sortLine = null;
+  saveState(); render(); closeCreatureConfig(); showToast('Creatures saved');
+}
+
+// ── IMPORT / EXPORT ────────────────────────────────────────────────────────
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download='cozy-farm.json'; a.click();
+  URL.revokeObjectURL(a.href); showToast('Saved');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.players) throw new Error('invalid');
+      const conflicts = (d.players||[]).filter(lp=>lp.uid&&state.players.some(p=>p.uid&&p.uid===lp.uid));
+      pendingImport = d;
+      if (conflicts.length) {
+        document.getElementById('conflict-msg').innerHTML =
+          `${conflicts.length} player${conflicts.length>1?'s':''} with matching UIDs will be updated:<br><br>`+
+          conflicts.map(lp=>{
+            const ex=state.players.find(p=>p.uid===lp.uid);
+            return `<strong>${esc(lp.name)}</strong> (UID: ${esc(lp.uid)}) — overwrites "${esc(ex.name)}"`;
+          }).join('<br>');
+        document.getElementById('conflict-overlay').classList.add('open');
+      } else { applyImport(d); }
+    } catch { showToast('Error: invalid JSON'); }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+function closeConflict() { document.getElementById('conflict-overlay').classList.remove('open'); pendingImport=null; }
+function confirmImport() { if(pendingImport) applyImport(pendingImport); closeConflict(); }
+function applyImport(d) {
+  if (d.creatures) state.creatures = d.creatures;
+  (d.players||[]).forEach(lp=>{
+    if (lp.uid) {
+      const idx=state.players.findIndex(p=>p.uid&&p.uid===lp.uid);
+      if (idx>=0) { state.players[idx]={...lp,id:state.players[idx].id}; return; }
+    }
+    state.players.push({...lp,id:lp.id||genId()});
+  });
+  saveState(); render(); showToast('Import complete');
+}
+
+// ── CONFIRM ────────────────────────────────────────────────────────────────
+function openConfirm(title,msg,cb) {
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  _confirmCb=cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); _confirmCb=null; }
+document.getElementById('confirm-ok').addEventListener('click',()=>{ if(_confirmCb)_confirmCb(); closeConfirm(); });
+
+function confirmClearAll() {
+  openConfirm('Clear everything?','Deletes all players and resets to defaults. Your saved JSON is not affected.',()=>{
+    state={creatures:DEFAULT_CREATURES.map(c=>({...c,active:false})),players:[]};
+    localStorage.removeItem(LS_KEY); sortLine=null; sortDir='desc';
+    saveState(); render(); showToast('Cleared');
+  });
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────────
+function onSearch(val) {
+  searchVal = val.trim().toLowerCase();
+  render();
+  // Re-focus the input after render
+  const inp = document.getElementById('search-input');
+  if (inp) { inp.focus(); }
+}
+
+// ── MOBILE MENU ────────────────────────────────────────────────────────────
+function openMobMenu() {
+  document.getElementById('mob-menu').classList.add('open');
+  document.getElementById('mob-menu-overlay').classList.add('open');
+}
+function closeMobMenu() {
+  document.getElementById('mob-menu').classList.remove('open');
+  document.getElementById('mob-menu-overlay').classList.remove('open');
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+let _tt;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ── KEYBOARD / BACKDROP ────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.overlay.open').forEach(el=>el.classList.remove('open'));
+    _confirmCb=null; pendingImport=null; closeMobMenu();
+  }
+});
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',ev=>{if(ev.target===el){el.classList.remove('open');_confirmCb=null;pendingImport=null;}});
+});
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+loadState();
+render();
+</script>
+</body>
+</html>
