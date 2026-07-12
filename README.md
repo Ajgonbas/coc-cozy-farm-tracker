@@ -1,6 +1,10 @@
 # Cozy Farm Tracker
 
-A single-file, offline-friendly web tool for tracking friend tatari during the **Cozy Farm** event in **Clash of Critters**. No install, no account, no server — just open the HTML file in any browser on desktop or mobile.
+A single-file, offline-friendly web tool for tracking friend tatari during the **Cozy Farm** event in **Clash of Critters**. No install, no account, no server — just open in any browser on desktop or mobile.
+
+🚀 **[➜ Open Cozy Farm Tracker](https://ajgonbas.github.io/coc-cozy-farm-tracker/)**
+
+🔗 **Repository:** https://github.com/Ajgonbas/coc-cozy-farm-tracker
 
 ---
 
@@ -21,13 +25,13 @@ This tracker helps you:
 Click **📚 Tatari Lib** to manage your tatari lines. Each line has a name (e.g. `Frugling`) and a food type (e.g. `Dragon`). The default lines are pre-loaded:
 
 | Tatari Line | Food     |
-|---------------|----------|
-| Frugling      | Dragon   |
-| Maskfry       | Phantom  |
-| Droppit       | Carrot   |
-| Pandaroo      | Bamboo   |
-| Hootlet       | Clocko   |
-| Punchimp      | Banana   |
+|-------------|----------|
+| Frugling    | Dragon   |
+| Maskfry     | Phantom  |
+| Droppit     | Carrot   |
+| Pandaroo    | Bamboo   |
+| Hootlet     | Clocko   |
+| Punchimp    | Banana   |
 
 You can add, rename, or remove lines as the event evolves.
 
@@ -42,14 +46,16 @@ Click **+ Add Player**, enter their name and UID, then fill in the tier (T1–T4
 ## Main screen
 
 ### Tatari columns
-Each active tatari line appears as a column. Click the column header to sort all players by their points for that line — useful for figuring out who to visit when you have a specific crop to feed. Click the header again to toggle ascending/descending. Click **clear** in the toolbar to go back to best-overall ordering.
+Each active tatari line appears as a column. Click the column header to sort all players by their points for that line — useful for figuring out who to visit when you have a specific crop to feed. Click the header again to toggle ascending/descending.
+
+On **mobile**, a row of sort buttons appears below the search bar — one per active tatari line, plus a "Best overall" button. Tap to sort, tap again to flip direction.
 
 ### Sorting
-- **Default (no column selected):** players sorted by their highest point value across all active tatari.
-- **Column selected:** players sorted by their points for that specific tatari line. Players with no data for that line appear at the bottom.
+- **Best overall (default):** players sorted by their highest point value across all active tatari.
+- **Tatari line selected:** players sorted by their points for that specific line. Players with no data for that line appear at the bottom.
 
 ### Search
-Type in the search bar to filter players by name or UID. Sorting is always applied on top of the current search.
+Type in the search bar to filter players by name or UID. Sorting is always applied on top of the current search filter.
 
 ---
 
@@ -60,7 +66,7 @@ Each player has:
 - For each active tatari line:
   - **Tier** — T1, T2, T3, or T4
   - **Points** — the point value shown in-game for that tatari
-  - **Glitter** ✦ — whether the tatari is glittered (reflected in the gold colour)
+  - **Glitter** ✦ — whether the tatari is glittered (shown in gold)
 
 Tier and glitter are per-player, per-tatari — two friends can have the same tatari line at different tiers.
 
@@ -75,12 +81,19 @@ Tier and glitter are per-player, per-tatari — two friends can have the same ta
 
 ---
 
+## Help button
+
+A **Help** button is available in both the desktop header and the mobile menu. It links directly to this README page on GitHub.
+
+---
+
 ## Mobile
 
 The tracker works on mobile browsers. On small screens:
 - The header collapses to a ☰ menu button
 - Each player is shown as a stacked card with their tatari in a horizontal scrollable row
 - Tatari labels appear on each cell so you know which line you're looking at without column headers
+- A sort button row replaces the column header sorting
 
 ---
 

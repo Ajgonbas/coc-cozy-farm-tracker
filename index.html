@@ -262,6 +262,7 @@
     <button class="btn" onclick="openAddPlayer()">+ Add Player</button>
     <button class="btn" onclick="document.getElementById('import-input').click()">Import JSON</button>
     <button class="btn" onclick="exportJSON()">Save JSON</button>
+    <a class="btn" href="https://github.com/Ajgonbas/coc-cozy-farm-tracker#readme" target="_blank" rel="noopener">Help</a>
   </div>
   <button class="hamburger-btn" onclick="openMobMenu()">☰</button>
 </header>
@@ -274,6 +275,7 @@
   <button class="btn" onclick="exportJSON();closeMobMenu()">Save JSON</button>
   <button class="btn" onclick="document.getElementById('import-input').click();closeMobMenu()">Import JSON</button>
   <button class="btn danger" onclick="confirmClearAll();closeMobMenu()">Clear all</button>
+  <a class="btn" href="https://github.com/Ajgonbas/coc-cozy-farm-tracker#readme" target="_blank" rel="noopener" onclick="closeMobMenu()">Help</a>
 </div>
 
 <input type="file" id="import-input" accept=".json,application/json" onchange="importJSON(event)" style="display:none">
