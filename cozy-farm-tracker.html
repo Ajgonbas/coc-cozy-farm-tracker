@@ -191,9 +191,22 @@
     .creature-chip { font-size: 11px; padding: 4px 9px; }
 
     /* Toolbar */
-    .toolbar { gap: 8px; }
+    .toolbar { gap: 8px; flex-wrap: wrap; }
     .search-input { width: 100%; }
     .toolbar-count { font-size: 11px; }
+
+    /* Mobile sort bar */
+    .mob-sort-bar { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; padding: 2px 0; }
+    .mob-sort-btn {
+      font-size: 11px; font-weight: 500; padding: 4px 10px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border2);
+      background: var(--surface); color: var(--text2); cursor: pointer;
+      white-space: nowrap; transition: all 0.1s;
+    }
+    .mob-sort-btn.active-sort {
+      background: var(--accent-light); border-color: var(--accent);
+      color: var(--accent); font-weight: 700;
+    }
 
     /* Hide desktop table, show mobile cards */
     .player-table-wrap { background: none; border: none; border-radius: 0; overflow: visible; }
@@ -236,6 +249,7 @@
     #mob-menu, #mob-menu-overlay { display: none !important; }
     .tatari-cells-mobile { display: contents; }
     .tatari-cell-label { display: none; }
+    .mob-sort-bar { display: none; }
   }
 </style>
 </head>
@@ -455,6 +469,16 @@ function render() {
     }).join('');
   }
 
+  // ── Mobile sort bar ──
+  const mobSortBtns = active.length ? `
+    <div class="mob-sort-bar">
+      <button class="mob-sort-btn${!sortLine?' active-sort':''}" onclick="clearSort()">Best overall ${!sortLine?(sortDir==='desc'?'↓':'↑'):''}</button>
+      ${active.map(c => `
+        <button class="mob-sort-btn${sortLine===c.line?' active-sort':''}" onclick="setSort('${esc(c.line)}')">
+          ${esc(c.line)}${sortLine===c.line?(sortDir==='desc'?' ↓':' ↑'):''}
+        </button>`).join('')}
+    </div>` : '';
+
   main.innerHTML = `
     <div class="active-bar">
       <div class="active-bar-head">
@@ -466,6 +490,7 @@ function render() {
     <div class="toolbar">
       <input type="text" class="search-input" id="search-input"
         placeholder="Search player…" value="${esc(searchVal)}" oninput="onSearch(this.value)">
+      ${mobSortBtns}
       <span class="toolbar-count">${players.length} player${players.length!==1?'s':''}</span>
       ${sortLine ? `<span style="font-size:12px;color:var(--accent);">↕ <strong>${esc(sortLine)}</strong> — <a href="#" onclick="clearSort();return false;" style="color:var(--accent);font-size:12px;">clear</a></span>` : ''}
       <div class="toolbar-spacer"></div>

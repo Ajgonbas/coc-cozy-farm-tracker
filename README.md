@@ -6,21 +6,21 @@ A single-file, offline-friendly web tool for tracking friend tatari during the *
 
 ## How it works
 
-During the Cozy Farm event, you visit friends' tatari and feed them crops to earn points. Each tatari belongs to a creature line (e.g. Frugling, Maskfry), and each friend's tatari has its own tier (T1–T4), glitter status, and point value. Each round, up to 5 tatari lines are active — those are the ones you can feed.
+During the Cozy Farm event, you visit friends' tatari and feed them crops to earn points. Each tatari belongs to a tatari line (e.g. Frugling, Maskfry), and each friend's tatari has its own tier (T1–T4), glitter status, and point value. Each round, up to 5 tatari lines are active — those are the ones you can feed.
 
 This tracker helps you:
 - Record each friend's tatari details and point values
 - Quickly see which friends give the most points for any given tatari line
-- Sort by creature line to plan your feeding route
+- Sort by tatari line to plan your feeding route
 
 ---
 
 ## Setup (do this once per event round)
 
 ### 1. Configure the Tatari Library
-Click **📚 Tatari Lib** to manage your creature lines. Each line has a name (e.g. `Frugling`) and a food type (e.g. `Dragon`). The default lines are pre-loaded:
+Click **📚 Tatari Lib** to manage your tatari lines. Each line has a name (e.g. `Frugling`) and a food type (e.g. `Dragon`). The default lines are pre-loaded:
 
-| Creature Line | Food     |
+| Tatari Line | Food     |
 |---------------|----------|
 | Frugling      | Dragon   |
 | Maskfry       | Phantom  |
@@ -32,7 +32,7 @@ Click **📚 Tatari Lib** to manage your creature lines. Each line has a name (e
 You can add, rename, or remove lines as the event evolves.
 
 ### 2. Activate this round's tatari
-On the main screen, click the creature line chips to mark up to **5 as active** for the current round. These are the tatari that appear for every player. Click a chip again to deactivate it.
+On the main screen, click the tatari line chips to mark up to **5 as active** for the current round. These are the tatari that appear for every player. Click a chip again to deactivate it.
 
 ### 3. Add your friends
 Click **+ Add Player**, enter their name and UID, then fill in the tier (T1–T4), glitter (✦), and point value for each active tatari. Leave blank if a friend doesn't have a particular tatari.
@@ -46,7 +46,7 @@ Each active tatari line appears as a column. Click the column header to sort all
 
 ### Sorting
 - **Default (no column selected):** players sorted by their highest point value across all active tatari.
-- **Column selected:** players sorted by their points for that specific creature line. Players with no data for that line appear at the bottom.
+- **Column selected:** players sorted by their points for that specific tatari line. Players with no data for that line appear at the bottom.
 
 ### Search
 Type in the search bar to filter players by name or UID. Sorting is always applied on top of the current search.
@@ -62,7 +62,7 @@ Each player has:
   - **Points** — the point value shown in-game for that tatari
   - **Glitter** ✦ — whether the tatari is glittered (reflected in the gold colour)
 
-Tier and glitter are per-player, per-tatari — two friends can have the same creature line at different tiers.
+Tier and glitter are per-player, per-tatari — two friends can have the same tatari line at different tiers.
 
 ---
 
