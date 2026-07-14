@@ -142,19 +142,50 @@
   .field-row { display: flex; gap: 10px; }
   .field-row .field { flex: 1; }
 
-  /* Per-tatari point entry in player modal */
-  .pts-grid { display: flex; flex-direction: column; gap: 7px; }
-  .pts-row { display: flex; align-items: center; gap: 10px; padding: 8px 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
-  .pts-row-label { flex: 1; min-width: 0; }
-  .pts-row-label .creature-name { font-size: 13px; font-weight: 600; }
-  .pts-row-label .food-name { font-size: 11px; color: var(--text3); }
-  .pts-tier-row { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
-  .pts-tier-row select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; width: 58px; }
-  .pts-tier-row select:focus { border-color: var(--accent); }
-  .pts-tier-row input[type=number] { width: 70px; font-size: 13px; font-weight: 700; text-align: right; padding: 3px 7px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; }
-  .pts-tier-row input[type=number]:focus { border-color: var(--accent); }
-  .glitter-chk { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--glitter-text); cursor: pointer; }
-  .glitter-chk input { width: 14px; height: 14px; accent-color: var(--glitter); cursor: pointer; }
+  /* Per-tatari table in player modal */
+  .pts-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .pts-table th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text3); padding: 6px 8px;
+    border-bottom: 2px solid var(--border); background: var(--surface2);
+  }
+  .pts-table th.center { text-align: center; }
+  .pts-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .pts-table tr:last-child td { border-bottom: none; }
+  .pts-table tr:hover td { background: var(--surface2); }
+  .pts-table td select {
+    font-size: 12px; padding: 3px 5px; border: 1px solid var(--border2);
+    border-radius: 4px; background: var(--surface); color: var(--text); outline: none; width: 58px;
+  }
+  .pts-table td select:focus { border-color: var(--accent); }
+  .pts-table td input[type=number] {
+    width: 68px; font-size: 13px; font-weight: 600; text-align: right;
+    padding: 3px 6px; border: 1px solid var(--border2); border-radius: 4px;
+    background: var(--surface); color: var(--text); outline: none;
+  }
+  .pts-table td input[type=number]:focus { border-color: var(--accent); }
+  .pts-table td.center { text-align: center; }
+  .glitter-chk { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; color: var(--glitter-text); cursor: pointer; }
+  .glitter-chk input { width: 15px; height: 15px; accent-color: var(--glitter); cursor: pointer; }
+  .tatari-cell-name { font-weight: 600; font-size: 13px; }
+  .tatari-cell-food { font-size: 11px; color: var(--text3); }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+  .tooltip-trigger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--border2);
+    color: var(--text2); font-size: 10px; font-weight: 700; cursor: pointer;
+    user-select: none; flex-shrink: 0;
+  }
+  .tooltip-box {
+    display: none; position: absolute; left: 22px; top: 50%; transform: translateY(-50%);
+    background: var(--text); color: var(--surface); font-size: 11px; font-weight: 400;
+    padding: 5px 9px; border-radius: var(--radius-sm); white-space: nowrap; z-index: 10;
+    pointer-events: none;
+  }
+  .tooltip-wrap:hover .tooltip-box,
+  .tooltip-wrap.tip-open .tooltip-box { display: block; }
 
   /* Creature lines modal */
   .cl-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
@@ -282,7 +313,7 @@
 
 <!-- ── PLAYER MODAL ── -->
 <div class="overlay" id="player-overlay">
-  <div class="modal">
+  <div class="modal" style="max-width:580px;">
     <div class="modal-header">
       <h2 id="pm-title">Add Player</h2>
       <button class="close-btn" onclick="closePlayerModal()">×</button>
@@ -290,11 +321,23 @@
     <div class="modal-body">
       <div class="field-row">
         <div class="field"><label>Player Name</label><input type="text" id="pm-name" placeholder="e.g. TatariMaster"></div>
-        <div class="field"><label>UID</label><input type="text" id="pm-uid" placeholder="e.g. 11111111"></div>
+        <div class="field">
+          <label>UID</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" id="pm-uid" placeholder="e.g. 11111111" style="flex:1;">
+            <button class="btn sm" onclick="copyUID()" title="Copy UID to clipboard">📋</button>
+          </div>
+        </div>
       </div>
       <div class="field">
-        <label>Tatari points (for active creature lines)</label>
-        <div class="pts-grid" id="pts-grid"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <label style="margin:0;">Tatari data</label>
+          <span class="tooltip-wrap">
+            <span class="tooltip-trigger" onclick="this.parentElement.classList.toggle('tip-open')">?</span>
+            <span class="tooltip-box">Use the 📚 Tatari Lib button to edit this list</span>
+          </span>
+        </div>
+        <div id="pts-grid"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -464,6 +507,7 @@ function render() {
           <div class="player-row-actions">
             <button class="btn sm" onclick="openEditPlayer('${p.id}')">Edit</button>
             <button class="btn sm danger" onclick="deletePlayer('${p.id}')">Delete</button>
+            ${p.uid ? `<button class="btn sm" onclick="copyToClipboard('${esc(p.uid)}','UID copied')" title="Copy UID ${esc(p.uid)}">📋 ${esc(p.uid)}</button>` : ''}
           </div>
         </div>
         <div class="tatari-cells-mobile">${cells}</div>
@@ -560,32 +604,34 @@ function openEditPlayer(pid) {
 
 function buildPtsGrid(existing) {
   const grid = document.getElementById('pts-grid');
-  const active = activeCreatures();
-  if (!active.length) {
-    grid.innerHTML = '<p style="font-size:13px;color:var(--text3);">No active tatari. Activate creature lines on the main screen first.</p>';
+  const allLines = state.creatures;
+  if (!allLines.length) {
+    grid.innerHTML = '<p style="font-size:13px;color:var(--text3);">No tatari lines defined. Use 📚 Tatari Lib to add some.</p>';
     return;
   }
-  grid.innerHTML = active.map(c => {
+  const rows = allLines.map(c => {
     const entry = existing[c.line] || {};
     const tierVal = entry.tier || 'T1';
     const ptsVal  = entry.points ?? '';
     const glit    = entry.glitter || false;
-    return `<div class="pts-row">
-      <div class="pts-row-label">
-        <div class="creature-name">${esc(c.line)}</div>
-        <div class="food-name">${esc(c.food)}</div>
-      </div>
-      <div class="pts-tier-row">
-        <select id="pt-tier-${esc(c.line)}">
-          ${TIERS.map(t=>`<option value="${t}" ${t===tierVal?'selected':''}>${t}</option>`).join('')}
-        </select>
-        <input type="number" id="pt-pts-${esc(c.line)}" min="0" value="${ptsVal}" placeholder="pts">
-        <label class="glitter-chk">
-          <input type="checkbox" id="pt-glit-${esc(c.line)}" ${glit?'checked':''}> ✦
-        </label>
-      </div>
-    </div>`;
+    const tierOpts = TIERS.map(t => `<option value="${t}" ${t===tierVal?'selected':''}>${t}</option>`).join('');
+    return `<tr>
+      <td><div class="tatari-cell-name">${esc(c.line)}</div><div class="tatari-cell-food">${esc(c.food)}</div></td>
+      <td><select id="pt-tier-${esc(c.line)}">${tierOpts}</select></td>
+      <td><input type="number" id="pt-pts-${esc(c.line)}" min="0" value="${ptsVal}" placeholder="—"></td>
+      <td class="center"><label class="glitter-chk"><input type="checkbox" id="pt-glit-${esc(c.line)}" ${glit?'checked':''}> ✦</label></td>
+    </tr>`;
   }).join('');
+
+  grid.innerHTML = `<table class="pts-table">
+    <thead><tr>
+      <th>Tatari / Food</th>
+      <th>Tier</th>
+      <th>Points</th>
+      <th class="center">Glitter ✦</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function closePlayerModal() {
@@ -598,9 +644,8 @@ function savePlayer() {
   const uid  = document.getElementById('pm-uid').value.trim();
   if (!name) { showToast('Player name is required'); return; }
 
-  const active = activeCreatures();
   const tatari = {};
-  active.forEach(c => {
+  state.creatures.forEach(c => {
     const ptsEl  = document.getElementById(`pt-pts-${c.line}`);
     const tierEl = document.getElementById(`pt-tier-${c.line}`);
     const glitEl = document.getElementById(`pt-glit-${c.line}`);
@@ -616,7 +661,6 @@ function savePlayer() {
   if (editingPid) {
     const p = state.players.find(p=>p.id===editingPid);
     p.name = name; p.uid = uid;
-    // Merge — keep non-active lines, overwrite active ones
     Object.assign(p.tatari, tatari);
   } else {
     state.players.push({ id: genId(), name, uid, tatari });
@@ -624,6 +668,18 @@ function savePlayer() {
 
   saveState(); render(); closePlayerModal();
   showToast(editingPid ? 'Player updated' : 'Player added');
+}
+
+function copyToClipboard(text, successMsg) {
+  navigator.clipboard.writeText(text)
+    .then(() => showToast(successMsg || 'Copied'))
+    .catch(() => showToast('Copy failed'));
+}
+
+function copyUID() {
+  const val = document.getElementById('pm-uid').value.trim();
+  if (!val) { showToast('No UID to copy'); return; }
+  copyToClipboard(val, 'UID copied to clipboard');
 }
 
 function deletePlayer(pid) {
