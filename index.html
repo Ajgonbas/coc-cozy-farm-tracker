@@ -84,7 +84,7 @@
 
   /* Column headers = creature lines */
   .col-headers { display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: var(--surface2); }
-  .col-player-header { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); min-width: 200px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+  .col-player-header { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); width: 200px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
   .col-tatari-header { flex: 1; min-width: 100px; padding: 9px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text2); cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--border); transition: background 0.1s; text-align: center; }
   .col-tatari-header:hover { background: var(--bg); }
   .col-tatari-header.sorted { background: var(--sorted-bg); color: var(--accent); border-top: 2px solid var(--accent); margin-top: -2px; }
@@ -96,7 +96,7 @@
   .player-row:last-child { border-bottom: none; }
   .player-row:hover { background: var(--surface2); }
 
-  .player-info-cell { min-width: 200px; flex-shrink: 0; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 2px; border-right: 1px solid var(--border); }
+  .player-info-cell { width: 200px; flex-shrink: 0; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 2px; border-right: 1px solid var(--border); }
   .player-row-name { font-size: 13px; font-weight: 600; }
   .player-row-uid { font-size: 10px; color: var(--text3); font-family: monospace; }
   .player-row-actions { display: flex; gap: 5px; margin-top: 5px; }
@@ -392,6 +392,20 @@
 
 <div id="toast"></div>
 
+<div id="static-toolbar" style="padding:0 20px;max-width:1200px;margin:0 auto;">
+  <div class="toolbar" style="padding-top:14px;">
+    <input type="text" class="search-input" id="search-input" placeholder="Search player…">
+    <span class="toolbar-count" id="player-count"></span>
+    <span id="sort-indicator" style="font-size:12px;color:var(--accent);display:none;">
+      ↕ <strong id="sort-indicator-name"></strong> —
+      <a href="#" onclick="clearSort();return false;" style="color:var(--accent);font-size:12px;">clear</a>
+    </span>
+    <div class="toolbar-spacer"></div>
+    <button class="btn sm danger" onclick="confirmClearAll()">Clear all</button>
+  </div>
+  <div id="mob-sort-bar-container"></div>
+</div>
+
 <main id="main"></main>
 
 <script>
@@ -432,7 +446,11 @@ function saveState() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 // ── HELPERS ────────────────────────────────────────────────────────────────
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function activeCreatures() { return state.creatures.filter(c=>c.active); }
+function activeCreatures() {
+  return state.creatures
+    .filter(c => c.active)
+    .sort((a, b) => (a.activeOrder || 0) - (b.activeOrder || 0));
+}
 function foodFor(line) { return (state.creatures.find(c=>c.line===line)||{}).food||'?'; }
 function tierClass(t) { return ({T1:'t1',T2:'t2',T3:'t3',T4:'t4'})[t]||'t1'; }
 
@@ -515,15 +533,25 @@ function render() {
     }).join('');
   }
 
-  // ── Mobile sort bar ──
-  const mobSortBtns = active.length ? `
-    <div class="mob-sort-bar">
-      <button class="mob-sort-btn${!sortLine?' active-sort':''}" onclick="clearSort()">Best overall ${!sortLine?(sortDir==='desc'?'↓':'↑'):''}</button>
-      ${active.map(c => `
-        <button class="mob-sort-btn${sortLine===c.line?' active-sort':''}" onclick="setSort('${esc(c.line)}')">
-          ${esc(c.line)}${sortLine===c.line?(sortDir==='desc'?' ↓':' ↑'):''}
-        </button>`).join('')}
+  // Update static toolbar elements (outside main, not re-rendered)
+  document.getElementById('player-count').textContent =
+    `${players.length} player${players.length!==1?'s':''}`;
+  const si = document.getElementById('sort-indicator');
+  if (sortLine) {
+    si.style.display = '';
+    document.getElementById('sort-indicator-name').textContent = sortLine;
+  } else {
+    si.style.display = 'none';
+  }
+
+  // Mobile sort bar (also static container)
+  const mobBar = document.getElementById('mob-sort-bar-container');
+  if (mobBar) {
+    mobBar.innerHTML = active.length ? `<div class="mob-sort-bar">
+      <button class="mob-sort-btn${!sortLine?' active-sort':''}" onclick="clearSort()">Best overall${!sortLine?(sortDir==='desc'?' ↓':' ↑'):''}</button>
+      ${active.map(c=>`<button class="mob-sort-btn${sortLine===c.line?' active-sort':''}" onclick="setSort('${esc(c.line)}')">${esc(c.line)}${sortLine===c.line?(sortDir==='desc'?' ↓':' ↑'):''}</button>`).join('')}
     </div>` : '';
+  }
 
   main.innerHTML = `
     <div class="active-bar">
@@ -533,15 +561,6 @@ function render() {
       </div>
       <div class="chips-row">${chips}</div>
     </div>
-    <div class="toolbar">
-      <input type="text" class="search-input" id="search-input"
-        placeholder="Search player…" value="${esc(searchVal)}" oninput="onSearch(this.value)">
-      ${mobSortBtns}
-      <span class="toolbar-count">${players.length} player${players.length!==1?'s':''}</span>
-      ${sortLine ? `<span style="font-size:12px;color:var(--accent);">↕ <strong>${esc(sortLine)}</strong> — <a href="#" onclick="clearSort();return false;" style="color:var(--accent);font-size:12px;">clear</a></span>` : ''}
-      <div class="toolbar-spacer"></div>
-      <button class="btn sm danger" onclick="confirmClearAll()">Clear all</button>
-    </div>
     <div class="player-table-wrap">
       ${active.length ? `<div class="col-headers">
         <div class="col-player-header">Player</div>
@@ -550,10 +569,6 @@ function render() {
       ${rowsHtml}
     </div>`;
 
-  // Restore focus to search if it was active
-  if (document.activeElement?.id !== 'search-input') return;
-  const inp = document.getElementById('search-input');
-  if (inp) inp.focus();
 }
 
 // ── SORT ────────────────────────────────────────────────────────────────────
@@ -575,8 +590,12 @@ function toggleCreature(line) {
   const active = activeCreatures();
   if (!c.active && active.length >= MAX_ACTIVE) return;
   c.active = !c.active;
-  // If we just deactivated the sorted column, clear sort
-  if (!c.active && sortLine === line) { sortLine = null; }
+  if (c.active) {
+    c.activeOrder = Date.now(); // record activation order
+  } else {
+    delete c.activeOrder;
+    if (sortLine === line) sortLine = null;
+  }
   saveState(); render();
 }
 
@@ -751,13 +770,30 @@ function importJSON(e) {
 function closeConflict() { document.getElementById('conflict-overlay').classList.remove('open'); pendingImport=null; }
 function confirmImport() { if(pendingImport) applyImport(pendingImport); closeConflict(); }
 function applyImport(d) {
-  if (d.creatures) state.creatures = d.creatures;
-  (d.players||[]).forEach(lp=>{
+  // Merge creatures — preserve active state from current
+  if (d.creatures) {
+    d.creatures.forEach(incoming => {
+      const existing = state.creatures.find(c => c.line === incoming.line);
+      if (existing) {
+        existing.food = incoming.food; // update food, keep active state
+      } else {
+        state.creatures.push({ ...incoming, active: false });
+      }
+    });
+  }
+  // Merge players — deep-merge tatari data for UID matches
+  (d.players||[]).forEach(lp => {
     if (lp.uid) {
-      const idx=state.players.findIndex(p=>p.uid&&p.uid===lp.uid);
-      if (idx>=0) { state.players[idx]={...lp,id:state.players[idx].id}; return; }
+      const idx = state.players.findIndex(p => p.uid && p.uid === lp.uid);
+      if (idx >= 0) {
+        const existing = state.players[idx];
+        // Merge tatari: incoming values overwrite per-line, existing lines not in incoming are kept
+        existing.name   = lp.name;
+        existing.tatari = { ...existing.tatari, ...(lp.tatari || {}) };
+        return;
+      }
     }
-    state.players.push({...lp,id:lp.id||genId()});
+    state.players.push({ ...lp, id: lp.id || genId() });
   });
   saveState(); render(); showToast('Import complete');
 }
@@ -778,15 +814,6 @@ function confirmClearAll() {
     localStorage.removeItem(LS_KEY); sortLine=null; sortDir='desc';
     saveState(); render(); showToast('Cleared');
   });
-}
-
-// ── SEARCH ─────────────────────────────────────────────────────────────────
-function onSearch(val) {
-  searchVal = val.trim().toLowerCase();
-  render();
-  // Re-focus the input after render
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); }
 }
 
 // ── MOBILE MENU ────────────────────────────────────────────────────────────
@@ -817,6 +844,12 @@ document.querySelectorAll('.overlay').forEach(el=>{
 // ── BOOT ───────────────────────────────────────────────────────────────────
 loadState();
 render();
+
+// Wire search input once — it lives in static HTML so this only needs to run once
+document.getElementById('search-input').addEventListener('input', function() {
+  searchVal = this.value.trim().toLowerCase();
+  render();
+});
 </script>
 </body>
 </html>
