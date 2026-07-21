@@ -195,8 +195,8 @@
   .cl-row input:focus { border-color: var(--accent); }
   .drag-handle { color: var(--text3); cursor: grab; font-size: 16px; padding: 0 2px; user-select: none; flex-shrink: 0; }
   .drag-handle:active { cursor: grabbing; }
-  .del-btn { background: none; border: none; font-size: 18px; color: var(--text3); cursor: pointer; padding: 0 2px; }
-  .del-btn:hover { color: var(--danger-text); }
+  .del-btn { background: none; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 13px; color: var(--text3); cursor: pointer; width: 28px; align-self: stretch; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.1s; }
+  .del-btn:hover { color: var(--danger-text); border-color: var(--danger-border); background: var(--danger-bg); }
 
   /* conflict / confirm */
   .warn-box { background: var(--glitter-bg); border: 1px solid var(--glitter-border); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; color: var(--glitter-text); line-height: 1.6; }
@@ -353,7 +353,7 @@
 
 <!-- ── CREATURE CONFIG MODAL ── -->
 <div class="overlay" id="creature-overlay">
-  <div class="modal" style="max-width:420px;">
+  <div class="modal" style="max-width:480px;">
     <div class="modal-header">
       <h2>Tatari + Food Line</h2>
       <button class="close-btn" onclick="closeCreatureConfig()">×</button>
