@@ -188,9 +188,13 @@
   .tooltip-wrap.tip-open .tooltip-box { display: block; }
 
   /* Creature lines modal */
-  .cl-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .cl-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: default; transition: background 0.1s, opacity 0.1s; }
+  .cl-row.drag-over { background: var(--accent-light); border-color: var(--accent); }
+  .cl-row.dragging { opacity: 0.4; }
   .cl-row input { flex: 1; font-size: 12px; padding: 4px 7px; border: 1px solid var(--border2); border-radius: 4px; background: var(--surface); color: var(--text); outline: none; }
   .cl-row input:focus { border-color: var(--accent); }
+  .drag-handle { color: var(--text3); cursor: grab; font-size: 16px; padding: 0 2px; user-select: none; flex-shrink: 0; }
+  .drag-handle:active { cursor: grabbing; }
   .del-btn { background: none; border: none; font-size: 18px; color: var(--text3); cursor: pointer; padding: 0 2px; }
   .del-btn:hover { color: var(--danger-text); }
 
@@ -351,11 +355,11 @@
 <div class="overlay" id="creature-overlay">
   <div class="modal" style="max-width:420px;">
     <div class="modal-header">
-      <h2>Creature Lines</h2>
+      <h2>Tatari + Food Line</h2>
       <button class="close-btn" onclick="closeCreatureConfig()">×</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--text2);line-height:1.5;">Define creature lines and their food type. Activate up to 5 lines as the current round's tatari using the chips on the main screen.</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.5;">Define tatari lines and their food type. Activate up to 5 lines as the current round's tatari using the chips on the main screen. Drag and drop to order and it will show when adding another player.</p>
       <div id="cl-list" style="display:flex;flex-direction:column;gap:6px;"></div>
       <button class="btn" style="margin-top:4px;" onclick="addCL()">+ Add Line</button>
     </div>
@@ -718,13 +722,79 @@ function openCreatureConfig() {
 }
 function closeCreatureConfig() { document.getElementById('creature-overlay').classList.remove('open'); }
 
+let _dragIdx = null;
+
 function renderCL() {
-  document.getElementById('cl-list').innerHTML = tempCL.map((c,i)=>`
-    <div class="cl-row">
-      <input type="text" placeholder="Creature line" value="${esc(c.line)}" oninput="tempCL[${i}].line=this.value">
-      <input type="text" placeholder="Food" value="${esc(c.food)}" oninput="tempCL[${i}].food=this.value">
-      <button class="del-btn" onclick="removeCL(${i})">×</button>
-    </div>`).join('');
+  const list = document.getElementById('cl-list');
+  list.innerHTML = '';
+
+  tempCL.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'cl-row';
+    row.draggable = true;
+    row.dataset.idx = i;
+
+    // Drag handle
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Drag to reorder';
+
+    // Line input
+    const lineInput = document.createElement('input');
+    lineInput.type = 'text';
+    lineInput.placeholder = 'Tatari line';
+    lineInput.value = c.line;
+    lineInput.addEventListener('input', () => { tempCL[i].line = lineInput.value; });
+
+    // Food input
+    const foodInput = document.createElement('input');
+    foodInput.type = 'text';
+    foodInput.placeholder = 'Food';
+    foodInput.value = c.food;
+    foodInput.addEventListener('input', () => { tempCL[i].food = foodInput.value; });
+
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', () => removeCL(i));
+
+    row.appendChild(handle);
+    row.appendChild(lineInput);
+    row.appendChild(foodInput);
+    row.appendChild(delBtn);
+
+    // ── Drag events ──
+    row.addEventListener('dragstart', e => {
+      _dragIdx = i;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      list.querySelectorAll('.cl-row').forEach(r => r.classList.remove('drag-over'));
+      _dragIdx = null;
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.cl-row').forEach(r => r.classList.remove('drag-over'));
+      if (_dragIdx !== null && _dragIdx !== i) row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (_dragIdx === null || _dragIdx === i) return;
+      // Reorder tempCL
+      const moved = tempCL.splice(_dragIdx, 1)[0];
+      tempCL.splice(i, 0, moved);
+      renderCL();
+    });
+
+    list.appendChild(row);
+  });
 }
 function addCL() { tempCL.push({line:'',food:'',active:false}); renderCL(); }
 function removeCL(i) { tempCL.splice(i,1); renderCL(); }
