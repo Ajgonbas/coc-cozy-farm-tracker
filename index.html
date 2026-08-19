@@ -98,7 +98,7 @@
 
   .player-info-cell { width: 200px; flex-shrink: 0; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 2px; border-right: 1px solid var(--border); }
   .player-row-name { font-size: 13px; font-weight: 600; }
-  .player-row-uid { font-size: 10px; color: var(--text3); font-family: monospace; }
+  .player-row-uid { font-size: 12px; color: var(--text2); font-family: monospace; font-weight: 500; }
   .player-row-actions { display: flex; gap: 5px; margin-top: 5px; }
 
   .tatari-cell { flex: 1; min-width: 100px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-left: 1px solid var(--border); }
@@ -524,7 +524,7 @@ function render() {
         <div class="player-info-cell">
           <div>
             <div class="player-row-name">${esc(p.name)}</div>
-            ${p.uid ? `<div class="player-row-uid">UID: ${esc(p.uid)}</div>` : ''}
+            ${p.uid ? `<div class="player-row-uid">${esc(p.uid)}</div>` : ''}
           </div>
           <div class="player-row-actions">
             <button class="btn sm" onclick="openEditPlayer('${p.id}')">Edit</button>
