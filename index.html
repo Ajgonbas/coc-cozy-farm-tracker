@@ -80,10 +80,10 @@
   .toolbar-spacer { flex: 1; }
 
   /* ── PLAYER TABLE ── */
-  .player-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .player-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; }
 
   /* Column headers = creature lines */
-  .col-headers { display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: var(--surface2); }
+  .col-headers { display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: var(--surface2); min-width: max-content; }
   .col-player-header { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); width: 200px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
   .col-tatari-header { flex: 1; min-width: 100px; padding: 9px 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text2); cursor: pointer; user-select: none; display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--border); transition: background 0.1s; text-align: center; }
   .col-tatari-header:hover { background: var(--bg); }
@@ -92,7 +92,7 @@
   .col-food-label { font-size: 10px; font-weight: 400; color: var(--text3); }
 
   /* Player rows */
-  .player-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+  .player-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); min-width: max-content; }
   .player-row:last-child { border-bottom: none; }
   .player-row:hover { background: var(--surface2); }
 
@@ -456,7 +456,7 @@ const DEFAULT_CREATURES = [
   { line:'Punchimp',  food:'Banana'  },
 ];
 const TIERS = ['T1','T2','T3','T4'];
-const MAX_ACTIVE = 5;
+const MAX_ACTIVE = Infinity;
 const LS_KEY      = 'cozy-farm-v2';
 const LS_FULL_KEY = 'cozy-farm-full-v1'; // separate so full status never pollutes exports
 
@@ -520,12 +520,10 @@ function render() {
 
   // ── Active bar chips ──
   const chips = state.creatures.map(c => {
-    const canActivate = c.active || active.length < MAX_ACTIVE;
-    return `<div class="creature-chip${c.active?' active':''}${!canActivate?' disabled':''}"
-      onclick="${canActivate?`toggleCreature('${esc(c.line)}')`:''}">
+    return `<div class="creature-chip${c.active?' active':''}" onclick="toggleCreature('${esc(c.line)}')">
       ${esc(c.line)}<span class="chip-food">${esc(c.food)}</span>
     </div>`;
-  }).join('') || `<span class="no-creatures-msg">No creatures configured — click ⚙ Creatures to add some.</span>`;
+  }).join('') || `<span class="no-creatures-msg">No tatari configured — click 📚 Tatari Lib to add some.</span>`;
 
   // ── Column headers ──
   const colHeaders = active.map(c => {
@@ -554,7 +552,7 @@ function render() {
         const tier = entry?.tier;
         const full = isFull(c.line);
 
-        return `<div class="tatari-cell${isSorted?' sorted-col':''}${isFull?' is-full':''}">
+        return `<div class="tatari-cell${isSorted?' sorted-col':''}${full?' is-full':''}">
           <div class="tatari-cell-label">${esc(c.line)}</div>
           <div class="tc-pts-val${isGlitter?' glitter':''}${!hasPts?' empty':''}">${hasPts ? pts : '—'}</div>
           ${hasPts ? `<div class="tc-meta">
@@ -562,7 +560,7 @@ function render() {
             ${isGlitter ? '<span class="tc-glitter-star">✦</span>' : ''}
           </div>` : ''}
           <button class="tc-full-btn${full?' is-full':''}"
-            onclick="toggleFull('${p.id}','${esc(c.line)}')">${full ? '● Full' : '○ Mark full'}</button>
+            onclick="toggleFull('${p.id}','${esc(c.line)}')">${full ? '✕ Busy' : '✓ Free'}</button>
         </div>`;
       }).join('');
 
@@ -574,7 +572,7 @@ function render() {
               ${p.uid ? `<button class="uid-copy-btn" onclick="copyToClipboard('${esc(p.uid)}','UID copied')" title="Copy UID">📋 ${esc(p.uid)}</button>` : ''}
               <button class="all-full-btn${allFull?' is-full':''}"
                 onclick="setAllFull('${p.id}')">
-                ${allFull ? '● Full' : '○ Full'}
+                ${allFull ? '✕ Busy' : '✓ Free'}
               </button>
             </div>
             <div class="player-row-actions">
@@ -614,7 +612,7 @@ function render() {
     <div class="active-bar">
       <div class="active-bar-head">
         <span class="active-bar-title">Active Tatari This Round</span>
-        <span class="active-pill">${active.length} / ${MAX_ACTIVE}</span>
+        <span class="active-pill">${active.length} active</span>
       </div>
       <div class="chips-row">${chips}</div>
     </div>
@@ -622,7 +620,7 @@ function render() {
       ${active.length ? `<div class="col-headers">
         <div class="col-player-header">
           Player
-          <button class="clear-full-btn${anyFull?' visible':''}" onclick="clearAllFull()" title="Clear all full statuses">↺ Clear full</button>
+          <button class="clear-full-btn${anyFull?' visible':''}" onclick="clearAllFull()" title="Clear all statuses">↺ Clear status</button>
         </div>
         ${colHeaders}
       </div>` : ''}
@@ -669,11 +667,9 @@ function clearSort() { sortLine = null; sortDir = 'desc'; render(); }
 function toggleCreature(line) {
   const c = state.creatures.find(c=>c.line===line);
   if (!c) return;
-  const active = activeCreatures();
-  if (!c.active && active.length >= MAX_ACTIVE) return;
   c.active = !c.active;
   if (c.active) {
-    c.activeOrder = Date.now(); // record activation order
+    c.activeOrder = Date.now();
   } else {
     delete c.activeOrder;
     if (sortLine === line) sortLine = null;
@@ -710,17 +706,20 @@ function buildPtsGrid(existing) {
     grid.innerHTML = '<p style="font-size:13px;color:var(--text3);">No tatari lines defined. Use 📚 Tatari Lib to add some.</p>';
     return;
   }
-  const rows = allLines.map(c => {
+  const rows = allLines.map((c, i) => {
     const entry = existing[c.line] || {};
     const tierVal = entry.tier || 'T1';
     const ptsVal  = entry.points ?? '';
     const glit    = entry.glitter || false;
     const tierOpts = TIERS.map(t => `<option value="${t}" ${t===tierVal?'selected':''}>${t}</option>`).join('');
+    // Support % inputs get sequential tabindex so Tab moves straight down the column.
+    // Tier and Glitter use tabindex="-1" so they're reachable by mouse/click but skipped by Tab.
+    const tabIdx = i + 1;
     return `<tr>
       <td><div class="tatari-cell-name">${esc(c.line)}</div><div class="tatari-cell-food">${esc(c.food)}</div></td>
-      <td><select id="pt-tier-${esc(c.line)}">${tierOpts}</select></td>
-      <td><input type="number" id="pt-pts-${esc(c.line)}" min="0" value="${ptsVal}" placeholder="—"></td>
-      <td class="center"><label class="glitter-chk"><input type="checkbox" id="pt-glit-${esc(c.line)}" ${glit?'checked':''}> ✦</label></td>
+      <td><select id="pt-tier-${esc(c.line)}" tabindex="-1">${tierOpts}</select></td>
+      <td><input type="number" id="pt-pts-${esc(c.line)}" min="0" value="${ptsVal}" placeholder="—" tabindex="${tabIdx}"></td>
+      <td class="center"><label class="glitter-chk"><input type="checkbox" id="pt-glit-${esc(c.line)}" ${glit?'checked':''} tabindex="-1"> ✦</label></td>
     </tr>`;
   }).join('');
 
@@ -728,7 +727,7 @@ function buildPtsGrid(existing) {
     <thead><tr>
       <th>Tatari / Food</th>
       <th>Tier</th>
-      <th>Points</th>
+      <th>Support %</th>
       <th class="center">Glitter ✦</th>
     </tr></thead>
     <tbody>${rows}</tbody>
